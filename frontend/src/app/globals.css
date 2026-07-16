@@ -242,6 +242,36 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ---- 摇卦相关动画 ---- */
+
+/* 爻线/卦象浮现 */
+@keyframes hexagram-reveal {
+  0% { opacity: 0; filter: blur(8px); transform: scale(0.95); }
+  100% { opacity: 1; filter: blur(0); transform: scale(1); }
+}
+
+/* 铜钱落地微弹 */
+@keyframes coin-land {
+  0% { transform: translateY(-20px); }
+  40% { transform: translateY(4px); }
+  60% { transform: translateY(-8px); }
+  100% { transform: translateY(0); }
+}
+
+/* 摇卦按钮金色脉冲 */
+@keyframes shake-button-pulse {
+  0%, 100% { box-shadow: 0 0 14px 3px rgba(201, 169, 110, 0.18); }
+  50% { box-shadow: 0 0 32px 8px rgba(201, 169, 110, 0.35); }
+}
+
+/* 香火粒子升腾 */
+@keyframes incense-rise {
+  0% { opacity: 0; transform: translateY(0) translateX(0) scale(0.7); }
+  20% { opacity: 0.5; }
+  80% { opacity: 0.08; }
+  100% { opacity: 0; transform: translateY(-70px) translateX(var(--drift, 0px)) scale(1.4); }
+}
+
 @layer utilities {
   .animate-fadeIn {
     animation: fadeIn 0.5s ease-out forwards;
@@ -249,5 +279,21 @@
 
   .text-warm-white {
     color: #e8e4dd;
+  }
+
+  .animate-hexagram {
+    animation: hexagram-reveal 0.8s ease-out forwards;
+  }
+
+  .animate-coin-land {
+    animation: coin-land 0.4s ease-out forwards;
+  }
+
+  .animate-shake-pulse {
+    animation: shake-button-pulse 2s ease-in-out infinite;
+  }
+
+  .animate-incense {
+    animation: incense-rise 4s ease-out infinite;
   }
 }

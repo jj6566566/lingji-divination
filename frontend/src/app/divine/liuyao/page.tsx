@@ -297,7 +297,6 @@ export default function LiuyaoChatPage() {
       <ChatInput
         ref={inputRef}
         onSend={handleSend}
-        onCast={handleCast}
         disabled={isStreaming}
         isStreaming={isStreaming}
       />
@@ -308,6 +307,7 @@ export default function LiuyaoChatPage() {
           hexagramData={castingData}
           onConfirm={handleConfirmHexagram}
           onCancel={handleCancelCasting}
+          defaultMode="interactive"
         />
       )}
     </div>
