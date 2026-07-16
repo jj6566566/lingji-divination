@@ -41,6 +41,7 @@ public class DivinationController {
 
         var list = records.getRecords().stream().map(r -> DivinationVO.builder()
                 .id(r.getId())
+                .threadId(r.getThreadId())
                 .method(r.getMethod())
                 .question(r.getQuestion())
                 .resultJson(r.getResultJson())
@@ -59,6 +60,7 @@ public class DivinationController {
 
         DivinationVO vo = DivinationVO.builder()
                 .id(r.getId())
+                .threadId(r.getThreadId())
                 .method(r.getMethod())
                 .question(r.getQuestion())
                 .resultJson(r.getResultJson())

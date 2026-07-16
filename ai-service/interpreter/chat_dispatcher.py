@@ -35,6 +35,8 @@ async def chat_stream(
     hexagram: dict | None = None,
     action: str = "chat",  # "chat" | "interpret" | "report"
     invite_rejected: bool = False,
+    record_id: int | None = None,
+    history: list[dict] | None = None,
 ) -> dict:
     """多轮对话流式响应
 
@@ -44,6 +46,8 @@ async def chat_stream(
         session_id: 会话 ID
         hexagram: 卦象数据（起卦完成时传入）
         action: 当前动作类型
+        record_id: 占卜记录 ID（透传回 done 事件）
+        history: 预填充的对话历史（从 DB 恢复 session 用）
     """
     # --- 第1步：获取或创建会话 ---
     session = session_manager.get_or_create(session_id, method)
@@ -51,6 +55,14 @@ async def chat_stream(
     # 处理用户拒绝起卦邀请
     if invite_rejected:
         session.invite_rejected = True
+
+    # 如果提供了 history（从 DB 恢复的对话历史），预填充到 session
+    if history and not session.messages:
+        for msg in history:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            if content:
+                session.append(role, content)
 
     # --- 第2步：加载 System Prompt（含 64 卦全量知识）---
     raw_prompt = prompt_manager.load(f"{method}_chat")
@@ -114,14 +126,22 @@ async def chat_stream(
     # 不再做额外的冷却限制 — Prompt 里的规则足够约束 AI 的行为
     offer_cast = tool_called is not None
 
-    yield {
+    done_event = {
         "type": "done",
         "offer_cast": offer_cast,
         "tokens": {
             "prompt": len(system_prompt) // 2,
             "completion": len(full_response) // 2,
         },
+        "chat_history": [
+            {"role": m["role"], "content": m["content"]}
+            for m in session.get_history()
+        ],
     }
+    if record_id is not None:
+        done_event["recordId"] = record_id
+
+    yield done_event
 
 
 def build_messages(
@@ -159,6 +179,11 @@ def build_messages(
         messages.append({
             "role": "system",
             "content": "(用户刚刚进入对话。请根据你的身份，主动向用户打招呼。语气自然有古韵，不要像客服一样说「请问有什么可以帮您」)",
+        })
+        # 必须有 user 消息来触发 LLM 回复（DeepSeek API 要求以 user 结尾）
+        messages.append({
+            "role": "user",
+            "content": current_message or "你好",
         })
     # 如果是起卦后的解读请求
     elif action == "interpret" and hexagram:
@@ -273,15 +298,18 @@ async def generate_report(
 
     full_report = ""
     try:
-        async for chunk in llm_client.stream(
+        async for event in llm_client.stream(
             system=system_prompt,
             messages=session.get_history() + [
                 {"role": "system", "content": report_instruction},
                 {"role": "user", "content": "请为我写一份完整的占卜报告"},
             ],
         ):
-            full_report += chunk
-            yield {"type": "text", "content": chunk}
+            if event["type"] == "text":
+                full_report += event["content"]
+                yield {"type": "text", "content": event["content"]}
+            elif event["type"] == "error":
+                yield event
     except Exception as e:
         yield {"type": "error", "message": f"报告生成失败: {str(e)}"}
         return

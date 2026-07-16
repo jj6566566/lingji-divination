@@ -14,6 +14,8 @@ public class DivinationRecord {
 
     private Long userId;
 
+    private String threadId;
+
     private String method;
 
     private String question;

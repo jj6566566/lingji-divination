@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Builder
 public class DivinationVO {
     private Long id;
+    private String threadId;
     private String method;
     private String question;
     private String resultJson;

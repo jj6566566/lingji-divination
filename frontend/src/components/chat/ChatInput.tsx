@@ -4,6 +4,7 @@ import { useState, useRef, useImperativeHandle, forwardRef, type FormEvent, type
 
 interface ChatInputProps {
   onSend: (message: string) => void;
+  onCast?: () => void;
   disabled?: boolean;
   isStreaming?: boolean;
 }
@@ -13,7 +14,7 @@ export interface ChatInputHandle {
 }
 
 const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
-  function ChatInput({ onSend, disabled, isStreaming }, ref) {
+  function ChatInput({ onSend, onCast, disabled, isStreaming }, ref) {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -54,8 +55,7 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
 
   return (
     <div className="sticky bottom-0 z-10 bg-gradient-to-t from-bg-primary via-bg-primary/95 to-transparent pb-4 pt-8">
-      <form onSubmit={handleSubmit} className="flex items-center gap-3 max-w-2xl mx-auto">
-
+      <form onSubmit={handleSubmit} className="flex items-end gap-3 max-w-2xl mx-auto">
         {/* 文本输入 */}
         <div className="flex-1 relative">
           <textarea
@@ -78,12 +78,12 @@ const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
         <button
           type="submit"
           disabled={disabled || isStreaming || !input.trim()}
-          className="flex-shrink-0 flex items-center justify-center w-11 h-11 relative -top-1 rounded-xl bg-[#c9a96e]/15 border border-[#c9a96e]/25 text-[#c9a96e] transition-all hover:bg-[#c9a96e]/25 hover:border-[#c9a96e]/40 disabled:opacity-30 disabled:cursor-not-allowed"
+          className="flex-shrink-0 flex items-center justify-center w-12 h-12 relative -top-1 rounded-xl bg-[#c9a96e]/15 border border-[#c9a96e]/25 text-[#c9a96e] transition-all hover:bg-[#c9a96e]/25 hover:border-[#c9a96e]/40 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           {isStreaming ? (
-            <span className="inline-block w-2 h-2 rounded-full bg-[#c9a96e] animate-pulse" />
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#c9a96e] animate-pulse" />
           ) : (
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7" />
             </svg>
           )}

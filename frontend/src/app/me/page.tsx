@@ -113,7 +113,7 @@ export default function MePage() {
             variant="outline"
             size="lg"
             className="w-full"
-            onClick={() => router.push("/me/records")}
+            onClick={() => router.push("/divine/liuyao")}
           >
             占卜记录
           </Button>

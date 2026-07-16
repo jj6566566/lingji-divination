@@ -19,6 +19,18 @@ import java.util.Map;
 @Component
 public class AiServiceClient {
 
+    /**
+     * SSE 流内容累加器 — 在代理 SSE 流的同时收集文本和结束事件，
+     * 供上层服务在流完成后持久化到数据库。
+     */
+    public interface StreamAccumulator {
+        void onText(String chunk);
+        void onDone(Map<String, Object> doneData);
+        default void onError(String message) {}
+        /** 客户端中途断开（切换对话/关闭页面）— 保存已累积的部分内容 */
+        default void onInterrupt() {}
+    }
+
     private static final Logger log = LoggerFactory.getLogger(AiServiceClient.class);
 
     private final String baseUrl;
@@ -37,7 +49,14 @@ public class AiServiceClient {
      * 对话流式请求 — 多轮聊天 + 解卦 + 报告
      */
     public void chatStream(Map<String, Object> request, SseEmitter emitter) {
-        streamToAiService("/api/v1/chat/stream", request, emitter);
+        streamToAiService("/api/v1/chat/stream", request, emitter, null);
+    }
+
+    /**
+     * 对话流式请求 — 带累加器，用于持久化
+     */
+    public void chatStream(Map<String, Object> request, SseEmitter emitter, StreamAccumulator acc) {
+        streamToAiService("/api/v1/chat/stream", request, emitter, acc);
     }
 
     /**
@@ -75,10 +94,15 @@ public class AiServiceClient {
     }
 
     public void divineStream(Map<String, Object> request, SseEmitter emitter) {
-        streamToAiService("/api/v1/divine/stream", request, emitter);
+        streamToAiService("/api/v1/divine/stream", request, emitter, null);
     }
 
     private void streamToAiService(String path, Map<String, Object> request, SseEmitter emitter) {
+        streamToAiService(path, request, emitter, null);
+    }
+
+    private void streamToAiService(String path, Map<String, Object> request, SseEmitter emitter,
+                                   StreamAccumulator acc) {
         new Thread(() -> {
             HttpURLConnection conn = null;
             try {
@@ -109,6 +133,7 @@ public class AiServiceClient {
                 }
 
                 // 解析上游 SSE，重新发送为标准 SSE 事件
+                boolean interrupted = false;
                 try (BufferedReader reader = new BufferedReader(
                         new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
                     String line;
@@ -131,10 +156,44 @@ public class AiServiceClient {
                             } catch (java.io.IOException clientEx) {
                                 // 客户端断开连接是正常行为，不当作错误
                                 log.info("客户端断开连接，停止推送");
+                                interrupted = true;
                                 break;
                             }
+
+                            // —— 累加器回调 ——
+                            if (acc != null) {
+                                try {
+                                    @SuppressWarnings("unchecked")
+                                    Map<String, Object> parsed = objectMapper.readValue(data, Map.class);
+                                    String type = (String) parsed.getOrDefault("type", currentEvent);
+
+                                    if ("text".equals(type) || "text".equals(currentEvent)) {
+                                        String content = (String) parsed.get("content");
+                                        if (content != null) {
+                                            acc.onText(content);
+                                        }
+                                    } else if ("done".equals(type) || "done".equals(currentEvent)) {
+                                        acc.onDone(parsed);
+                                    } else if ("error".equals(type) || "error".equals(currentEvent)) {
+                                        String msg = (String) parsed.getOrDefault("message", "AI 服务错误");
+                                        acc.onError(msg);
+                                    }
+                                } catch (Exception ignored) {
+                                    // 累加器解析失败不影响 SSE 转发
+                                }
+                            }
+
                             currentEvent = "message";
                         }
+                    }
+                }
+
+                // 客户端中途断开时，保存已累积的部分内容
+                if (interrupted && acc != null) {
+                    try {
+                        acc.onInterrupt();
+                    } catch (Exception ignored) {
+                        log.warn("保存中断内容失败");
                     }
                 }
 

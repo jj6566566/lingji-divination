@@ -34,7 +34,9 @@ public class ChatController {
                 req.getSessionId(),
                 req.getHexagram(),
                 req.getAction(),
-                req.getInviteRejected()
+                req.getInviteRejected(),
+                req.getRecordId(),
+                req.getThreadId()
         );
     }
 

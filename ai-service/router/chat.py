@@ -17,6 +17,9 @@ class ChatRequest(BaseModel):
     hexagram: dict | None = None
     action: str = "chat"  # "chat" | "interpret" | "report"
     inviteRejected: bool = False  # 用户是否拒绝了起卦邀请
+    recordId: int | None = None   # 占卜记录 ID（持久化追问用）
+    history: list[dict] | None = None  # 预填充的对话历史（session 恢复用）
+    threadId: str | None = None  # 对话线程 ID（前端生成，归组多次占卜）
 
 
 @router.post("/chat/stream")
@@ -31,6 +34,8 @@ async def chat_stream_endpoint(req: ChatRequest):
             hexagram=req.hexagram,
             action=req.action,
             invite_rejected=req.inviteRejected,
+            record_id=req.recordId,
+            history=req.history,
         ):
             event_type = chunk.get("type", "message")
             data = json.dumps(chunk, ensure_ascii=False)
