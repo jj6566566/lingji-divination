@@ -93,8 +93,15 @@ async def chat_stream(
     enable_tools = action not in ("greet", "interpret", "report")
     tools = [INVITE_TOOL] if enable_tools else None
 
+    print(f"[DEBUG] action={action}, tools_enabled={enable_tools}, "
+          f"msg_count={len(messages)}, "
+          f"system_prompt_len={len(system_prompt)}, "
+          f"hexagram_keys={list(hexagram.keys()) if hexagram else None}",
+          flush=True)
+
     full_response = ""
     tool_called = None
+    event_count = 0
     try:
         async for event in llm_client.stream(
             system=system_prompt,
@@ -102,6 +109,7 @@ async def chat_stream(
             temperature=0.9 if action == "greet" else None,
             tools=tools,
         ):
+            event_count += 1
             if event["type"] == "text":
                 full_response += event["content"]
                 yield {"type": "text", "content": event["content"]}
@@ -109,7 +117,13 @@ async def chat_stream(
                 if event["name"] == "invite_casting":
                     tool_called = event
 
+        print(f"[DEBUG] stream completed, event_count={event_count}, "
+              f"response_len={len(full_response)}, "
+              f"tool_called={tool_called is not None}",
+              flush=True)
+
     except Exception as e:
+        print(f"[DEBUG] stream ERROR: {e}", flush=True)
         yield {"type": "error", "message": f"AI 服务调用失败: {str(e)}"}
         return
 

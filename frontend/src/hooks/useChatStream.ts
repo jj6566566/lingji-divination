@@ -226,6 +226,7 @@ export default function useChatStream({
 
     // For interpret, add system message with hexagram
     if (action === "interpret" && hexagram) {
+      console.log("[DEBUG] interpret — hexagram keys:", Object.keys(hexagram));
       updateMessages(tid, (prev) => [...prev, {
         id: genId(),
         role: "system",
@@ -238,6 +239,7 @@ export default function useChatStream({
     let bubbleAdded = false;
 
     try {
+      console.log(`[DEBUG] sendChatMessage — action=${action}, message=${message?.slice(0, 30)}, streamStart`);
       const token = getToken();
       const resp = await fetch(`${BASE_URL}/chat/stream`, {
         method: "POST",
@@ -336,6 +338,7 @@ export default function useChatStream({
       }
 
       // After done: offer cast card (only for active thread display)
+      console.log(`[DEBUG] stream ended — bubbleAdded=${bubbleAdded}, offerCast=${offerCast}, textEvents=${bubbleAdded ? "yes" : "none"}`);
       if (offerCast && enableCasting) {
         slot.invitePending = true;
         updateMessages(tid, (prev) => [...prev, {
@@ -346,7 +349,11 @@ export default function useChatStream({
         }]);
       }
     } catch (err: any) {
-      if (err.name === "AbortError") return;
+      if (err.name === "AbortError") {
+        console.log("[DEBUG] stream aborted");
+        return;
+      }
+      console.error("[DEBUG] stream error:", err.message || err);
       slot.isStreaming = false;
       if (!bubbleAdded) {
         slot.error = err.message || "对话请求失败";
@@ -382,6 +389,14 @@ export default function useChatStream({
   /** User clicks 起卦 */
   const handleCast = useCallback(async () => {
     setError(null);
+
+    // Clear the invite card — user accepted the invitation
+    const slot = getSlot(activeThreadIdRef.current);
+    slot.invitePending = false;
+    updateMessages(activeThreadIdRef.current, (prev) =>
+      prev.filter((m) => m.offerCast !== true),
+    );
+
     try {
       const token = getToken();
       const resp = await fetch(`${BASE_URL}/divine/cast`, {

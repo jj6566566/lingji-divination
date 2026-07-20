@@ -1,94 +1,100 @@
-# 灵机 — AI 智能占卜平台
+# 灵机 — 大模型应用实践平台
 
-一款融合《周易》六爻传统与 AI 大模型的智能占卜工具。三枚铜钱起卦，AI 真人感对话式解卦，SSE 流式逐字呈现。
-
-选择占卜方式 → 与 AI 卜者"清玄"对话交流 → 铜钱起卦动画 → 卦象生成 → AI 逐爻解读 → 多轮追问。全程流式推送，打字机效果呈现。
+一个集成多种大模型能力的一站式应用平台。当前涵盖 AI 图像创作与 AI 角色扮演对话两大模块，采用三层架构（前端 → Java 后端 → Python AI 服务），SSE 流式响应。
 
 ## 核心特色
 
-🪙 **三枚铜钱起卦动画** — 交互式 SVG 铜钱滚动动效，支持手动摇晃和自动起卦两种模式。每次投掷三枚铜钱（阳面=2，阴面=3），六轮生成六爻，自动识别本卦、变卦、变爻。完整 64 卦索引，纯算法生成，零 Token 消耗。
+### 🎨 AI 图像创作
 
-🎭 **真人感 AI 卜者** — AI 以"清玄道人"身份对话，252 行 System Prompt 定义了完整的人格、话术和对话节奏。六个对话阶段（初见→倾听→邀请起卦→解卦→追问→撰写报告），每阶段有详细行为规范。起卦前绝不引用具体卦名卦辞，解卦时逐爻锚定用户所述的具体处境，不泛泛而谈。
+基于通义万相 wan2.7 模型的图像生成与编辑工具，非对话式直接操作。
 
-🔮 **逐爻拆解式解读** — 解卦严格遵循三步结构：收束（一句话过渡）→ 分层拆解（六爻逐一分析，每爻引用卦辞爻辞原文+白话翻译+锚定用户处境）→ 综合解读（六爻串联成完整叙事弧线，给出有画面感的结尾）。变爻特别标注，非变爻也不跳过。
+**文生图** — 输入中文画面描述 → DeepSeek 自动扩写为高质量绘画提示词（正向 + 负向）→ 通义万相 wan2.7-image-pro 生成 1K 分辨率图片。可选上传参考图，模型自动融合参考图的风格与构图。
 
-💬 **多轮追问 + 上下文压缩** — 解读完成后可继续追问，AI 基于原始卦象从新角度重新分析（不会重新起卦，不会编造新卦名）。对话超过 8000 Token 自动触发 LLM 压缩——旧消息压缩为结构化 JSON 摘要（用户画像+占卜概要+关键洞察+待解决问题），保留最近 5 轮原文。内置会话 TTL（默认 1 小时），过期自动清理。
+**图片编辑** — 五种编辑功能，统一的 wan2.7-image-pro 后端：
+- **去水印**：框选水印区域，AI 精准去除并自然填充背景
+- **指令编辑**：一句话描述修改内容，AI 自动改图
+- **风格迁移**：保留画面内容，转换绘画风格（水墨、油画等）
+- **扩图**：四向独立控制扩展比例（1×~2×），AI 智能补全四周
+- **超分**：模糊图片变高清，2~4 倍分辨率提升
 
-🧵 **对话线程系统** — 侧边栏多线程会话管理，每条线程独立上下文和消息历史。切换即恢复，聊天记录完整持久化到 MySQL。支持创建、切换、删除线程，删除线程级联清理关联的占卜记录。
+上传图片自动预处理：等比缩放到 512~4096 区间，极端比例（如 200×5000）居中加黑边，避免 API 拒绝。
 
-📜 **周易知识库** — 内置 64 卦卦辞、大象传、384 条爻辞（彖传覆盖 4 卦，爻象传覆盖 18 条，其余待补全）。结构化 JSON 存储，AI 解读时自动匹配对应卦象并注入 Prompt，对外以 `[HEXAGRAM_KNOWLEDGE]` 占位符替换。
+### 💬 AI 角色扮演对话
 
-⚙️ **Function Calling 起卦控制** — AI 通过 `invite_casting()` 工具函数触发起卦，不是随意发起。触发条件严格：至少两轮有实质内容的交流 + 用户明确回应 + 问题已清晰。起卦后进入冷却期，AI 不再主动提议重起。唯一触发方式是调用函数——AI 不能自己描述掷铜钱过程或编造卦象。
+基于 DeepSeek 模型的 Function Calling 对话系统。AI 以特定角色身份与用户交流，可在对话中调用工具完成复杂交互。当前内置一个六爻对话角色，后续可扩展更多角色场景。
+
+**角色系统** — 252 行 System Prompt 定义角色的完整人格、语气、对话节奏和行为规范。AI 严格遵循角色设定，包含六个对话阶段（问候→倾听→邀请使用工具→结果解读→追问→总结），每阶段有明确的行为边界。
+
+**Function Calling 工具调用** — AI 通过 `invite_casting()` 函数主动邀请用户使用工具。触发条件：至少两轮有实质内容的交流 + 用户明确回应。工具调用后 AI 进入冷却期，不重复提议。AI 不参与工具内部计算，只负责判断"何时调用"和"如何解读结果"。
+
+**工具引擎** — 纯代码实现的铜钱随机算法。三枚铜钱随机模拟（value 6/7/8/9）→ 六轮生成六爻 → 查 64 卦索引匹配卦名卦符 → 变爻反转生成变卦。结果确定、可复现，零 Token 消耗。
+
+**流式输出** — SSE 逐字推送，解读结果严格遵循三步结构：收束（一句话过渡）→ 分层拆解（逐个结果逐一分析，引用知识库原文 + 白话 + 锚定用户处境）→ 综合解读（串联成完整叙事）。
+
+**多轮追问 + 上下文压缩** — 结果输出后可继续追问，AI 基于原始结果从新角度分析。上下文超 8000 Token 自动触发 LLM 压缩为结构化 JSON 摘要，保留最近 5 轮原文。会话 TTL 默认 1 小时。
+
+**对话线程** — 侧边栏多线程管理，每条线程独立上下文。消息持久化到 MySQL，切换即恢复，线程删除级联清理关联记录。
+
+**知识库** — 内置 64 卦相关数据（卦辞、大象传、384 条爻辞），结构化 JSON 存储。工具调用后自动匹配并注入 Prompt，对外以占位符替换。
 
 ## 当前功能
 
 | 模块 | 功能 |
 |------|------|
-| 六爻起卦 | 三枚铜钱随机算法、64 卦完整索引、本卦+变卦+变爻自动识别 |
-| AI 解读 | SSE 流式输出、六阶段对话节奏、逐爻拆解、综合解读 |
-| 起卦动画 | SVG 铜钱交互动画、手动/自动双模式 |
-| 多轮追问 | 会话级对话历史、上下文超长自动压缩、结构化摘要 |
+| 文生图 | LLM 提示词扩写 + 通义万相 wan2.7 生成、支持参考图 |
+| 图片编辑 | 去水印、指令编辑、风格迁移、扩图、超分 |
+| 角色扮演对话 | 252 行角色 Prompt、六阶段对话、Function Calling 工具调用 |
+| 工具引擎 | 铜钱随机算法、64 卦索引、自动识别本变卦与变爻 |
+| 流式输出 | SSE 逐字推送、三步分析结构、知识库引用 |
+| 上下文管理 | 超长自动压缩、结构化摘要、5 轮原文保留、TTL 过期 |
 | 对话线程 | 侧边栏多线程管理、消息持久化、切换恢复、级联删除 |
 | 用户系统 | 注册/登录、JWT 鉴权、BCrypt 密码加密、每日免费 3 次 |
-| 记录管理 | 占卜历史分页列表、详情查看、软删除、赞/踩反馈 |
-| 知识库 | 64 卦卦辞、大象传、384 条爻辞、彖传和象传部分覆盖 |
+| 对话记录 | 历史分页、详情查看、软删除、赞/踩反馈 |
 
 ## 技术栈
 
 | 层级 | 技术 | 说明 |
 |------|------|------|
 | 前端框架 | Next.js 16 + TypeScript | App Router，React 19 |
-| UI | Radix UI + Tailwind CSS v4 | 无头组件 + 原子化样式，暗色东方主题 |
+| UI | Radix UI + Tailwind CSS v4 | 无头组件 + 原子化样式，暗色主题 |
 | 状态管理 | Zustand | 轻量状态管理 |
-| 图标 | Lucide React | SVG 图标库 |
-| 后端语言 | Java 21 (Temurin) | LTS 版本 |
+| 后端语言 | Java 21 (Temurin) | LTS |
 | 后端框架 | Spring Boot 3.3.5 | 企业级 Java 框架 |
-| ORM | MyBatis-Plus 3.5.7 | 国内主流 ORM，分页、软删除、自动填充 |
-| 鉴权 | Spring Security + JWT (jjwt 0.12.6) | 无状态鉴权，BCrypt 密码加密 |
+| ORM | MyBatis-Plus 3.5.7 | 分页、软删除、自动填充 |
+| 鉴权 | Spring Security + JWT (jjwt 0.12.6) | 无状态鉴权，BCrypt 加密 |
 | AI 框架 | Python FastAPI 0.115.6 | 异步 Web 框架 |
-| LLM SDK | OpenAI SDK（兼容模式） | 调用 DeepSeek API |
-| AI 模型 | DeepSeek (deepseek-chat) | 默认模型，中文能力强，成本极低 |
-| 数据库 | MySQL 8.0 | 关系型数据库，Docker 部署 |
+| 对话模型 | DeepSeek (deepseek-chat) | OpenAI 兼容 SDK，中文能力强 |
+| 生图模型 | 通义万相 wan2.7 (DashScope) | 文生图 + 图片编辑，阿里云百炼 |
+| 数据库 | MySQL 8.0 | Docker 部署 |
 | 容器化 | Docker Compose | MySQL 容器编排 |
 
 ## 设计思路
 
-### 引擎 + 解释器架构
-
-算卦引擎（纯代码，确定性可复现）与解卦解释器（调 LLM）完全解耦。新增占卜方式只需加一个引擎类 + System Prompt 模板，上下文管理、压缩、会话自动继承。
+### 生图链路
 
 ```
-六爻引擎 (liuyao.py)          八字引擎 (规划中)
-       │                           │
-       └───────────┬───────────────┘
-                   │
-                   ▼
-         解卦解释器 (dispatcher.py / chat_dispatcher.py)
-                   │
-         ┌─────────┼─────────┐
-         ▼         ▼         ▼
-    知识库查询   Prompt组装   LLM流式调用
+用户输入中文描述
+       │
+       ▼
+DeepSeek 扩写 → { positive_prompt, negative_prompt }
+       │
+       ▼
+通义万相 wan2.7-image-pro → 返回图片 URL
 ```
 
-当前实现了 `LiuyaoEngine`：三枚铜钱每轮 value=6/7/8/9 → 阴阳爻识别 → 下卦+上卦组成 6 位 key → 查 `HEXAGRAM_INDEX` 匹配卦名和卦符 → 变爻反转生成变卦。
+文生图为两步流水线：LLM 扩写 + 模型生成。图片编辑全功能统一走通义万相，前端收集参数 → AI 服务构建对应 Prompt → DashScope 同步接口返回结果图。两类模型权责清晰，互不耦合。
 
-### 上下文管理
-
-一次解卦的 Prompt 由三层组装：
+### 角色对话：引擎 + 解释器解耦
 
 ```
-层级1: System Prompt（永久不变）
-  252 行角色设定 — 清玄的人格、话术、六阶段节奏、禁忌
-
-层级2: 硬知识（不参与压缩）
-  卦象数据 + 匹配的卦辞爻辞 + 用户问题
-
-层级3: 对话历史（可能被压缩）
-  最近 5 轮保留原文
-  更早的消息压缩为结构化摘要
+工具引擎 (纯代码，确定性)            AI 解释器 (调 LLM)
+         │                                  │
+   ┌─────┴─────┐                  ┌─────────┼─────────┐
+   │           │                  │         │         │
+铜钱随机   64卦索引           知识库查询   Prompt组装   流式调用
 ```
 
-压缩触发条件：当前上下文 Token 估算值 > 8000 → 调 LLM 将旧消息压缩为 `{user_profile, divination_brief, key_insights, unresolved_questions}` 格式的 JSON 摘要。压缩使用 `deepseek-chat` 模型，temperature=0.3，max_tokens=500。
+工具引擎纯算法完成，结果确定、可复现。AI 只通过 Function Calling 判断何时调用工具、如何解读结果，不参与引擎内部计算。新增角色场景只需加引擎类 + System Prompt 模板，上下文管理、压缩、会话自动继承。
 
 ### 对话调度
 
@@ -96,21 +102,14 @@
 
 | Action | 触发场景 | 行为 |
 |--------|---------|------|
-| `greet` | 新线程首次进入 | 注入欢迎指令，AI 作为清玄主动打招呼 |
-| `chat` | 用户发送消息 | 常规对话，AI 判断是否调用 `invite_casting()` |
-| `interpret` | 起卦完成后 | 注入解卦指令（三步结构），AI 逐爻解读 |
-| `report` | 用户要保存 | AI 以"一封信"格式撰写完整占卜报告 |
+| `greet` | 新线程首次进入 | 注入欢迎指令，AI 以角色身份主动打招呼 |
+| `chat` | 用户发送消息 | 常规对话，AI 判断是否调用工具函数 |
+| `interpret` | 工具调用完成后 | 注入解读指令（三步结构），AI 逐项分析 |
+| `report` | 用户要求总结 | AI 撰写完整对话总结 |
 
-AI 通过 DeepSeek Function Calling 调用 `invite_casting()` 工具函数。后端收到 tool_call → 在响应中设置 `offer_cast=true` → 前端弹出铜钱动画 → 用户起卦 → 后端调 `interpret` action 触发解读。整个流程中 AI 不参与卦象生成，只负责判断"何时邀请"和"如何解读"。
+### 上下文管理与压缩
 
-### 知识库查询
-
-起卦完成后，`knowledge/loader.py` 根据卦象结果查询 `iching_64.json`：
-
-1. 匹配本卦 → 加载卦名、卦符、卦辞、大象传、彖传（如有）、六条爻辞
-2. 匹配变卦 → 加载变卦的卦名、卦符、卦辞
-3. 匹配变爻 → 标记变爻对应的爻辞
-4. 通过 `formatter.py` 将匹配结果格式化为 Markdown，注入 System Prompt 的 `[HEXAGRAM_KNOWLEDGE]` 占位符
+三层 Prompt 组装：System Prompt（角色设定，永久不变）→ 硬知识（工具结果 + 知识库数据，不参与压缩）→ 对话历史（最近 5 轮原文保留，更早消息 LLM 压缩为 JSON 摘要）。触发条件：Token 估算 > 8000。
 
 ## 快速开始
 
@@ -129,14 +128,15 @@ AI 通过 DeepSeek Function Calling 调用 `invite_casting()` 工具函数。后
 docker compose up -d
 ```
 
-在 `localhost:3306` 启动 MySQL 8.0，自动执行 `sql/init.sql` 创建 user、divination_record、daily_quota 三张表。
+自动执行 `sql/init.sql` 建表。
 
-### 3. 配置 DeepSeek API Key
+### 3. 配置 API Key
 
 编辑 `ai-service/.env`：
 
 ```
-LINGJI_DEEPSEEK_API_KEY=你的密钥
+LINGJI_DEEPSEEK_API_KEY=你的DeepSeek密钥
+LINGJI_DASHSCOPE_API_KEY=你的阿里云百炼密钥
 ```
 
 ### 4. 安装依赖
@@ -150,8 +150,6 @@ cd ai-service && pip install -r requirements.txt
 ```
 
 ### 5. 启动服务
-
-按顺序启动三个服务：
 
 ```bash
 # 终端 1 — AI 服务 (http://localhost:8000)
@@ -168,9 +166,17 @@ cd frontend && npm run dev
 
 ## API 接口
 
-基地址：`http://localhost:8080/api/v1`
+基地址：`http://localhost:8080/api/v1`（业务接口），`http://localhost:8000/api/v1`（AI 服务直连）
 
 鉴权方式：Header `Authorization: Bearer <JWT>`
+
+### 生图
+
+| 方法 | 路径 | 鉴权 | 说明 |
+|------|------|------|------|
+| POST | `/image/enhance` | 无 | LLM 扩写提示词（text → positive + negative） |
+| POST | `/image/generate` | 无 | 文生图（positive_prompt + 可选参考图） |
+| POST | `/image/edit` | 无 | 图片编辑（function + base_image + 对应参数） |
 
 ### 认证
 
@@ -185,14 +191,14 @@ cd frontend && npm run dev
 | 方法 | 路径 | 鉴权 | 说明 |
 |------|------|------|------|
 | POST | `/chat/stream` | Bearer | SSE 流式对话（greet/chat/interpret/report 统一入口） |
-| POST | `/divine/cast` | Bearer | 纯起卦，只跑铜钱算法，不调 LLM |
+| POST | `/divine/cast` | Bearer | 工具调用：铜钱六爻算法，不调 LLM |
 
-### 占卜记录
+### 对话记录
 
 | 方法 | 路径 | 鉴权 | 说明 |
 |------|------|------|------|
 | GET | `/divination?page=1&size=10` | Bearer | 分页列表（按时间倒序） |
-| GET | `/divination/{id}` | Bearer | 详情（含卦象、解读、对话历史、Token 消耗） |
+| GET | `/divination/{id}` | Bearer | 详情（含结果、解读、对话历史、Token 消耗） |
 | DELETE | `/divination/{id}` | Bearer | 软删除 |
 | POST | `/divination/{id}/feedback` | Bearer | 赞/踩反馈 |
 
@@ -227,12 +233,13 @@ cd frontend && npm run dev
 ├── frontend/                              # Next.js 16 前端
 │   └── src/
 │       ├── app/                           # 页面
-│       │   ├── page.tsx                   #   首页（占卜方式选择）
-│       │   ├── login/page.tsx             #   登录（含记住密码）
+│       │   ├── page.tsx                   #   首页（生图入口 + 对话入口）
+│       │   ├── login/page.tsx             #   登录
 │       │   ├── register/page.tsx          #   注册
 │       │   ├── me/page.tsx                #   个人中心 + 配额展示
-│       │   ├── me/records/page.tsx        #   占卜记录分页列表
-│       │   └── divine/liuyao/page.tsx     #   六爻对话页（聊天+侧边栏+起卦弹窗）
+│       │   ├── me/records/page.tsx        #   对话记录分页列表
+│       │   ├── create/page.tsx            #   生图创作页（文生图 + 图片编辑）
+│       │   └── divine/liuyao/page.tsx     #   角色对话页（聊天 + 侧边栏 + 工具弹窗）
 │       ├── components/
 │       │   ├── ui/                        #   Radix UI 组件（Button, Input, Card）
 │       │   ├── layout/Header.tsx          #   顶部导航
@@ -248,9 +255,9 @@ cd frontend && npm run dev
 │   └── src/main/java/com/divination/
 │       ├── controller/                    # Auth, User, Chat, Divination, Thread
 │       ├── service/                       # 业务逻辑
-│       │   ├── ChatService.java           #   对话调度核心（线程管理+流式转发+持久化）
-│       │   ├── QuotaService.java          #   每日配额（事务扣减+失败回滚）
-│       │   └── client/AiServiceClient.java#   AI 服务 HTTP 客户端（SSE 代理+中断保存）
+│       │   ├── ChatService.java           #   对话调度核心（线程管理 + 流式转发 + 持久化）
+│       │   ├── QuotaService.java          #   每日配额（事务扣减 + 失败回滚）
+│       │   └── client/AiServiceClient.java#   AI 服务 HTTP 客户端（SSE 代理 + 中断保存）
 │       ├── entity/                        # User, DivinationRecord, DailyQuota, ChatThread
 │       ├── config/SecurityConfig.java     #   Spring Security 无状态配置
 │       ├── interceptor/JwtInterceptor.java#   JWT 过滤器 + ThreadLocal 用户 ID
@@ -259,43 +266,30 @@ cd frontend && npm run dev
 ├── ai-service/                            # Python FastAPI AI 服务
 │   ├── engines/
 │   │   ├── base.py                        #   BaseEngine 抽象基类
-│   │   └── liuyao.py                      #   六爻引擎（铜钱模拟+64卦索引查询）
+│   │   └── liuyao.py                      #   铜钱六爻引擎（随机算法 + 64 卦索引）
 │   ├── interpreter/
 │   │   ├── chat_dispatcher.py             #   多轮对话调度（greet/chat/interpret/report）
-│   │   ├── dispatcher.py                  #   传统占卜流调度
+│   │   ├── dispatcher.py                  #   单次对话流调度
 │   │   └── llm_client.py                  #   DeepSeek 流式客户端（含 tool call 累积）
 │   ├── knowledge/
 │   │   ├── iching_64.json                 #   64 卦完整数据（41KB）
-│   │   ├── loader.py                      #   知识库查询（卦象+爻辞匹配）
+│   │   ├── loader.py                      #   知识库查询（卦象 + 爻辞匹配）
 │   │   └── formatter.py                   #   查询结果格式化为 Markdown
 │   ├── prompts/
-│   │   ├── manager.py                     #   Prompt 模板加载器（按 method 名缓存）
-│   │   ├── liuyao_system.md               #   简版解卦 Prompt
-│   │   └── liuyao_chat_system.md          #   完整对话 Prompt（252行，六阶段+禁忌+知识库占位）
+│   │   ├── manager.py                     #   Prompt 模板加载器
+│   │   └── liuyao_chat_system.md          #   角色设定 Prompt（252 行）
 │   ├── context/
-│   │   ├── session_manager.py             #   会话管理器（按 sessionId 索引，TTL 过期）
+│   │   ├── session_manager.py             #   会话管理器（sessionId 索引，TTL 过期）
 │   │   ├── context_assembler.py           #   三层 Prompt 组装器
-│   │   └── summarizer.py                  #   对话压缩（调 LLM 生成结构化摘要）
-│   └── router/                            #   divine, cast, chat 路由
+│   │   └── summarizer.py                  #   对话压缩（LLM 生成结构化摘要）
+│   └── router/                            #   divine, cast, chat, image_gen 路由
 │
 ├── sql/
 │   ├── init.sql                           # 建表：user, divination_record, daily_quota
-│   └── migration_v2_thread.sql            # v2 新增 chat_thread 表 + 记录关联 thread_id
+│   └── migration_v2_thread.sql            # chat_thread 表 + 记录关联 thread_id
 ├── docs/                                  # 架构设计文档
-│   ├── 00-整体架构.md
-│   ├── 01-前端设计.md
-│   ├── 02-后端设计.md
-│   └── 03-AI服务设计.md
 └── docker-compose.yml                     # MySQL 8.0 容器
 ```
-
-## 版本
-
-| 版本 | 状态 | 内容 |
-|------|------|------|
-| MVP | ✅ 已完成 | 注册登录、六爻起卦、AI 流式解读、多轮追问、对话线程、记录管理、铜钱动画、Function Calling 起卦控制 |
-| V1 | 开发中 | 八字排盘、塔罗占卜、反馈优化 |
-| V2 | 规划中 | 微信小程序、会员付费、Redis 缓存 |
 
 ## 依赖清单
 
@@ -305,18 +299,14 @@ cd frontend && npm run dev
 |------|------|------|
 | next | ^16.2.10 | React 全栈框架 |
 | react | ^19.2.4 | UI 框架 |
-| @radix-ui/react-dialog | ^1.1.19 | 起卦弹窗 |
-| @radix-ui/react-label | ^2.1.11 | 表单标签 |
+| @radix-ui/react-dialog | ^1.1.19 | 弹窗 |
 | @radix-ui/react-select | ^2.3.3 | 选择器 |
-| @radix-ui/react-slot | ^1.3.0 | 组件插槽 |
 | @radix-ui/react-tabs | ^1.1.17 | 标签页 |
 | class-variance-authority | ^0.7.1 | 组件变体管理 |
-| clsx | ^2.1.1 | 条件类名拼接 |
-| tailwind-merge | ^3.6.0 | 类名去重合并 |
-| lucide-react | ^1.24.0 | SVG 图标库 |
+| clsx + tailwind-merge | ^2.1 / ^3.6 | 条件类名拼接与去重 |
+| lucide-react | ^1.24.0 | SVG 图标 |
 | zustand | ^5.0.14 | 状态管理 |
 | tailwindcss | ^4 | 原子化 CSS |
-| typescript | ^5 | 类型系统 |
 
 ### Java 后端
 
@@ -328,7 +318,6 @@ cd frontend && npm run dev
 | mybatis-plus-spring-boot3-starter | 3.5.7 | ORM + 分页 + 软删除 |
 | mysql-connector-j | runtime | MySQL 驱动 |
 | jjwt-api / jjwt-impl / jjwt-jackson | 0.12.6 | JWT 签发与验证 |
-| lombok | latest | 代码简化 |
 
 ### AI 服务
 
@@ -337,22 +326,14 @@ cd frontend && npm run dev
 | fastapi | 0.115.6 | 异步 Web 框架 |
 | uvicorn[standard] | 0.34.0 | ASGI 服务器 |
 | openai | >=1.0.0 | DeepSeek API 客户端（OpenAI 兼容） |
-| pydantic | 2.10.4 | 数据校验与序列化 |
-| pydantic-settings | 2.7.1 | 环境变量配置管理 |
-| python-dotenv | 1.0.1 | .env 加载 |
-| lunardate | 0.2.2 | 农历日期转换（八字引擎预留） |
-
-### 基础设施
-
-| 组件 | 用途 |
-|------|------|
-| MySQL 8.0 | 主数据库 |
-| Docker Compose | MySQL 容器编排 |
+| pydantic + pydantic-settings | 2.10 / 2.7 | 数据校验 + 配置管理 |
+| aiohttp | - | 通义万相 API 异步调用 |
+| Pillow | - | 图片预处理（缩放/填充/格式转换） |
+| lunardate | 0.2.2 | 农历日期转换（扩展预留） |
 
 ## 开发说明
 
-- 本仓库为灵机 AI 占卜平台全栈代码，主分支保持可运行
-- 前端暗色东方主题（暖白文字+玄金强调色+毛玻璃卡片+鼠标跟随光晕）
-- AI 服务采用引擎+解释器解耦架构，新增占卜方式只需加引擎类和 Prompt 模板
-- LLM 默认使用 DeepSeek，通过 OpenAI 兼容 SDK 调用，切换模型零代码改动
-- 所有第三方依赖版本已在依赖清单中列明
+- 前端暗色主题（暖白文字 + 玄金强调色 + 毛玻璃卡片），Tailwind CSS v4 构建
+- AI 服务工具引擎与解释器解耦，新增角色场景只需加引擎类 + Prompt 模板
+- 对话模型通过 OpenAI 兼容 SDK 调用 DeepSeek，生图通过 aiohttp 调通义万相
+- 主分支保持可运行，所有第三方依赖版本已在依赖清单中列明

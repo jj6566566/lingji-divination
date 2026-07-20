@@ -161,9 +161,9 @@ export default function CastingModal({
       />
 
       {/* 弹窗 */}
-      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-white/10 bg-[#1a1a1f] shadow-2xl overflow-hidden animate-fade-in-up">
+      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-white/10 bg-[#1a1a1f] shadow-2xl overflow-hidden animate-fade-in-up">
         {/* 头部 */}
-        <div className="border-b border-white/5 px-6 py-4 flex items-center justify-between">
+        <div className="border-b border-white/5 px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">☯</span>
             <span className="text-sm font-medium text-warm-white">
@@ -212,9 +212,9 @@ export default function CastingModal({
         </div>
 
         {/* 内容区 */}
-        <div className="px-6 py-6 space-y-6">
+        <div className="px-4 py-3 space-y-3">
           {/* 铜钱动画区 */}
-          <div className="relative rounded-xl border border-white/5 bg-white/[0.02] p-6 overflow-hidden">
+          <div className="relative rounded-xl border border-white/5 bg-white/[0.02] p-3 overflow-hidden">
             {/* 氛围粒子 (香火) */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -236,7 +236,7 @@ export default function CastingModal({
             </div>
 
             {/* 状态文字 */}
-            <div className="relative text-center mb-4 z-10">
+            <div className="relative text-center mb-2 z-10">
               {isComplete ? (
                 <p className="text-sm text-amber-400/80">六爻皆定</p>
               ) : phase === "idle" ? (
@@ -258,7 +258,7 @@ export default function CastingModal({
             </div>
 
             {/* 3 枚铜钱 */}
-            <div className="relative z-10 flex items-center justify-center gap-5 py-2">
+            <div className="relative z-10 flex items-center justify-center gap-3 py-1">
               {(phase === "idle" && !isComplete
                 ? [0, 1, 2]
                 : getCoinFaces(currentYao?.value ?? 7)
@@ -268,9 +268,9 @@ export default function CastingModal({
                   return (
                     <div
                       key={i}
-                      className="w-[88px] h-[88px] rounded-full border border-white/8 bg-white/[0.03] flex items-center justify-center"
+                      className="w-[60px] h-[60px] rounded-full border border-white/8 bg-white/[0.03] flex items-center justify-center"
                     >
-                      <span className="text-2xl opacity-20">🪙</span>
+                      <span className="text-xl opacity-20">🪙</span>
                     </div>
                   );
                 }
@@ -283,7 +283,7 @@ export default function CastingModal({
                     isFlipping={phase === "flipping"}
                     landed={phase === "revealed" || isComplete}
                     delay={i * 60}
-                    size={88}
+                    size={60}
                   />
                 );
               })}
@@ -291,8 +291,8 @@ export default function CastingModal({
 
             {/* 爻象文字 */}
             {(phase === "revealed" && latestLine && !isComplete) && (
-              <div className="relative z-10 text-center animate-fadeIn mt-3">
-                <span className="text-2xl tracking-[0.3em] text-warm-white">
+              <div className="relative z-10 text-center animate-fadeIn mt-2">
+                <span className="text-xl tracking-[0.3em] text-warm-white">
                   {YAO_LINE[latestLine.type] || (latestLine.yang ? "———" : "— —")}
                 </span>
                 <p className="text-sm text-amber-400 mt-1">
@@ -304,19 +304,19 @@ export default function CastingModal({
 
             {/* 完成: 完整卦象 */}
             {isComplete && (
-              <div className="relative z-10 text-center space-y-4 animate-fadeIn">
+              <div className="relative z-10 text-center space-y-2 animate-fadeIn">
                 {/* 本卦 */}
                 <div
-                  className="inline-block rounded-xl px-6 py-3"
+                  className="inline-block rounded-xl px-4 py-2"
                   style={{
-                    boxShadow: "0 0 50px 16px rgba(201, 169, 110, 0.12)",
+                    boxShadow: "0 0 40px 12px rgba(201, 169, 110, 0.10)",
                   }}
                 >
-                  <p className="text-xs text-white/30 mb-1">本卦</p>
-                  <p className="text-3xl text-warm-white">
+                  <p className="text-[10px] text-white/30 mb-0.5">本卦</p>
+                  <p className="text-2xl text-warm-white">
                     {hexagramData?.original?.symbol}
                   </p>
-                  <p className="text-lg font-semibold text-warm-white mt-1">
+                  <p className="text-base font-semibold text-warm-white mt-0.5">
                     {hexagramData?.original?.name}
                   </p>
                 </div>
@@ -337,12 +337,12 @@ export default function CastingModal({
 
                 {/* 变卦 */}
                 {hexagramData?.transformed && (
-                  <div className="pt-3 border-t border-white/5">
-                    <p className="text-xs text-white/30 mb-1">变卦</p>
-                    <p className="text-xl text-amber-400/90">
+                  <div className="pt-2 border-t border-white/5">
+                    <p className="text-[10px] text-white/30 mb-0.5">变卦</p>
+                    <p className="text-lg text-amber-400/90">
                       {hexagramData.transformed.symbol}
                     </p>
-                    <p className="text-base font-semibold text-amber-400 mt-1">
+                    <p className="text-sm font-semibold text-amber-400 mt-0.5">
                       {hexagramData.transformed.name}
                     </p>
                   </div>
@@ -350,8 +350,8 @@ export default function CastingModal({
 
                 {/* 变爻 */}
                 {hexagramData?.changing_lines?.length > 0 && (
-                  <div className="pt-2">
-                    <p className="text-xs text-amber-400/60">
+                  <div className="pt-1">
+                    <p className="text-[10px] text-amber-400/60">
                       变爻：{hexagramData.changing_lines.map((l: any) => l.name || l).join(" · ")}
                     </p>
                   </div>
@@ -370,7 +370,7 @@ export default function CastingModal({
                 <div key={i} className="flex flex-col items-center gap-1">
                   <div
                     className={`
-                      w-9 h-9 rounded-full flex items-center justify-center text-xs font-medium
+                      w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium
                       transition-all duration-300
                       ${isComplete
                         ? "bg-amber-500/15 border border-amber-500/30 text-amber-400"
@@ -395,28 +395,28 @@ export default function CastingModal({
 
         {/* 底部按钮 */}
         {isComplete ? (
-          <div className="border-t border-white/5 px-6 py-4 flex gap-3">
+          <div className="border-t border-white/5 px-4 py-2 flex gap-3">
             <button
               onClick={onCancel}
-              className="flex-1 rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/50 hover:text-white/80 hover:border-white/20 transition-colors"
+              className="flex-1 rounded-xl border border-white/10 px-4 py-2 text-sm text-white/50 hover:text-white/80 hover:border-white/20 transition-colors"
             >
               重新起卦
             </button>
             <button
               onClick={onConfirm}
-              className="flex-1 rounded-xl bg-amber-500/15 border border-amber-500/30 px-4 py-2.5 text-sm text-amber-400 hover:bg-amber-500/25 transition-colors font-medium"
+              className="flex-1 rounded-xl bg-amber-500/15 border border-amber-500/30 px-4 py-2 text-sm text-amber-400 hover:bg-amber-500/25 transition-colors font-medium"
             >
               请先生解卦
             </button>
           </div>
         ) : (
-          <div className="border-t border-white/5 px-6 py-4 flex items-center justify-center gap-3">
+          <div className="border-t border-white/5 px-4 py-2 flex items-center justify-center gap-3">
             {/* 交互模式: 摇卦按钮 */}
             {mode === "interactive" && (
               phase === "idle" ? (
                 <button
                   onClick={startFlipping}
-                  className="group relative w-20 h-20 rounded-full flex items-center justify-center
+                  className="group relative w-14 h-14 rounded-full flex items-center justify-center
                     border-2 border-amber-500/30 bg-amber-500/10
                     hover:border-amber-500/50 hover:bg-amber-500/20
                     active:scale-95 transition-all duration-200
@@ -429,13 +429,13 @@ export default function CastingModal({
                   <span className="absolute inset-0 rounded-full border border-amber-400/10 animate-ping" />
                 </button>
               ) : phase === "flipping" ? (
-                <div className="w-20 h-20 rounded-full border-2 border-amber-500/20 bg-amber-500/5 flex items-center justify-center">
-                  <span className="text-xl text-amber-400/40 animate-pulse">···</span>
+                <div className="w-14 h-14 rounded-full border-2 border-amber-500/20 bg-amber-500/5 flex items-center justify-center">
+                  <span className="text-lg text-amber-400/40 animate-pulse">···</span>
                 </div>
               ) : (
                 <button
                   onClick={handleNextLine}
-                  className="px-6 py-2.5 rounded-xl border border-amber-500/25 bg-amber-500/10
+                  className="px-5 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10
                     text-sm text-amber-400 hover:bg-amber-500/20 hover:border-amber-500/40
                     transition-colors font-medium"
                 >

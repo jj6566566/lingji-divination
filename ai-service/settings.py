@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     max_tokens: int = 4096
     temperature: float = 0.7
 
+    # 通义万相 (阿里云百炼 DashScope)
+    dashscope_api_key: str = ""
+    dashscope_host: str = "dashscope.aliyuncs.com"
+
     # 上下文管理
     max_context_tokens: int = 8000
     recent_keep_rounds: int = 5       # 最近N轮保留原文

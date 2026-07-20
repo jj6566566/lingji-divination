@@ -6,8 +6,7 @@ import { useAuthStore } from "@/stores/auth";
 
 const methods = [
   { icon: "🪙", name: "六爻起卦", description: "掷铜钱问吉凶，决策之助", href: "/divine/liuyao" },
-  { icon: "📜", name: "八字排盘", description: "看运势命理，知进退之道", href: "#", available: false },
-  { icon: "🃏", name: "塔罗占卜", description: "探索情感选择，倾听内心", href: "#", available: false },
+  { icon: "🎨", name: "生图创作", description: "AI 绘画，描述即所得", href: "/create" },
 ];
 
 export default function Home() {
@@ -25,10 +24,10 @@ export default function Home() {
           灵机
         </h1>
         <p className="text-lg md:text-xl text-[#8b8680] mb-2">
-          古今易理 × 人工智能
+          大模型应用实践平台
         </p>
         <p className="text-sm text-[#8b8680]/60">
-          千年智慧，为你解一卦
+          对话 · 生图 · 持续扩展
         </p>
       </div>
 
